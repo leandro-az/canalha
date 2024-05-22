@@ -1,0 +1,66 @@
+version: "3.9"
+
+networks:
+  broker-kafka:
+    driver: bridge
+
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: "bitnami/zookeeper:3.8.0"
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - broker-kafka
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:7.5.1
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+        KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: '1'
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: '1'
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - broker-kafka
+
+  init-kafka:
+    image: confluentinc/cp-kafka:7.5.1
+    networks:
+      - broker-kafka
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:9092 --list
+      
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic final_client_topic --replication-factor 1 --partitions 1
+      
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka:9092 --list
+      "
+  kafdrop:
+    container_name: kafdrop
+    image: "obsidiandynamics/kafdrop:latest"
+    ports:
+      - "9000:9000"
+    environment:
+      - KAFKA_BROKER_CONNECT=kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - broker-kafka
+

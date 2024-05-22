@@ -1,0 +1,46 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:3.2.3'
+        classpath 'org.springframework.boot:spring-boot-autoconfigure:3.2.3'
+//        classpath 'io.spring.dependency-management:spring-dependency-management-gradle-plugin:1.1.4'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+//task wrapper {
+//    gradleVersion = '8.5' // Replace with your desired Gradle version
+//}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    group 'com.canalha.boilerplatewebflux'
+
+//    bootJar.enabled = true
+    repositories {
+        mavenCentral()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.3")
+        }
+    }
+
+}
+
+
+//include ':api'

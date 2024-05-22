@@ -1,0 +1,5 @@
+rootProject.name = 'canalha'
+include 'shared'
+include 'api'
+include 'worker'
+
